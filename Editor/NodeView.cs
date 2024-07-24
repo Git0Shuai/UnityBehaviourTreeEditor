@@ -7,13 +7,16 @@ using UnityEditor.Experimental.GraphView;
 using UnityEditor;
 
 namespace TheKiwiCoder {
-
     public class NodeView : UnityEditor.Experimental.GraphView.Node {
 
         public BehaviourTreeView treeView;
         public Node node;
         public Port input;
         public Port output;
+
+        [NonSerialized] 
+        // refs https://discussions.unity.com/t/using-trackpropertyvalue-and-untracking/946959/4
+        private VisualElement track_helper;
 
         public NodeView NodeParent {
             get {
@@ -78,7 +81,13 @@ namespace TheKiwiCoder {
                 if (node is SubTree subtree) {
                     var treeAssetProperty = nodeProp.FindPropertyRelative(nameof(SubTree.treeAsset));
                     SetSubTreeLabel(descriptionLabel, treeAssetProperty);
-                    descriptionLabel.TrackPropertyValue(treeAssetProperty, (property) => {
+                    if (track_helper != null) 
+                    {
+                        track_helper.Unbind();
+                        track_helper = null;
+                    }
+                    track_helper = new VisualElement();
+                    track_helper.TrackPropertyValue(treeAssetProperty, (property) => {
                         SetSubTreeLabel(descriptionLabel, property);
                     });
                 } else {

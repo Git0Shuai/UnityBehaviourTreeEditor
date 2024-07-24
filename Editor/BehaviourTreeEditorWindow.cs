@@ -1,4 +1,5 @@
 using System;
+using Kuaishou.UIProxy.Runtime.DynamicImage;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -49,48 +50,26 @@ namespace TheKiwiCoder {
         public TextAsset scriptTemplateCompositeNode;
         public TextAsset scriptTemplateDecoratorNode;
 
-        public BehaviourTreeView CurrentTreeView {
-            get {
-                var activeTab = tabView.activeTab as TreeViewTab;
-                if (activeTab != null) {
-                    return activeTab.treeView;
-                }
-                return null;
-            }
-        }
-        public BehaviourTree CurrentTree {
-            get {
-                var activeTab = tabView.activeTab as TreeViewTab;
-                if (activeTab != null) {
-                    return activeTab.serializer.tree;
-                }
-                return null;
-            }
-        }
-        public SerializedBehaviourTree CurrentSerializer {
-            get {
-                var activeTab = tabView.activeTab as TreeViewTab;
-                if (activeTab != null) {
-                    return activeTab.serializer;
-                }
-                return null;
-            }
-        }
+        public BehaviourTree tree;
+        [HideInInspector]
+        public SerializedBehaviourTree serializedTree;
+        public BehaviourTreeView treeView;
 
+        public ToolbarBreadcrumbs breadcrumbs;
+        
         public InspectorView inspectorView;
         public BlackboardView blackboardView;
         public OverlayView overlayView;
         public ToolbarMenu toolbarMenu;
         public Label versionLabel;
         public NewScriptDialogView newScriptDialog;
-        public TabView tabView;
         public BehaviourTreeEditorWindowState windowState;
 
         [SerializeField]
         public PendingScriptCreate pendingScriptCreate = new PendingScriptCreate();
 
 
-        [MenuItem("Window/AI/BehaviourTree")]
+        [MenuItem("Tools/Home2D/BehaviorTree")]
         public static void OpenWindow() {
             BehaviourTreeEditorWindow wnd = GetWindow<BehaviourTreeEditorWindow>();
             wnd.titleContent = new GUIContent("BehaviourTreeEditor");
@@ -136,10 +115,9 @@ namespace TheKiwiCoder {
             toolbarMenu = root.Q<ToolbarMenu>();
             overlayView = root.Q<OverlayView>("OverlayView");
             newScriptDialog = root.Q<NewScriptDialogView>("NewScriptDialogView");
-            tabView = root.Q<TabView>();
-            tabView.activeTabChanged -= OnTabChanged;
-            tabView.activeTabChanged += OnTabChanged;
-
+            treeView = root.Q<BehaviourTreeView>();
+            breadcrumbs = root.Q<ToolbarBreadcrumbs>();
+            
             versionLabel = root.Q<Label>("Version");
 
             // Toolbar assets menu
@@ -183,10 +161,14 @@ namespace TheKiwiCoder {
             if (packageManifest != null) {
                 versionLabel.text = $"v {packageManifest.version}";
             }
+            
+            // Tree view
+            treeView.OnNodeSelected -= OnNodeSelectionChanged;
+            treeView.OnNodeSelected += OnNodeSelectionChanged;
 
             // Overlay view
-            overlayView.OnTreeSelected -= t => NewTab(t, true);
-            overlayView.OnTreeSelected += t => NewTab(t, true);
+            overlayView.OnTreeSelected -= SelectTree;
+            overlayView.OnTreeSelected += SelectTree;
 
             // New Script Dialog
             newScriptDialog.style.visibility = Visibility.Hidden;
@@ -200,52 +182,40 @@ namespace TheKiwiCoder {
             }
         }
 
-        private void OnTabChanged(Tab previous, Tab current) {
-            TreeViewTab newTab = current as TreeViewTab;
-            inspectorView.Clear();
-            blackboardView?.Bind(newTab.serializer);
-            windowState.TabChanged(tabView.selectedTabIndex);
-        }
-
-        public void OnTabClosed(Tab tab) {
-            TreeViewTab treeTab = tab as TreeViewTab;
-            windowState.TabClosed(treeTab);
-        }
-
         void CreatePendingScriptNode() {
 
             // #TODO: Unify this with CreateNodeWindow.CreateNode
 
-            if (CurrentTreeView == null) {
+            if (treeView == null) {
                 return;
             }
 
-            NodeView source = CurrentTreeView.GetNodeByGuid(pendingScriptCreate.sourceGuid) as NodeView;
+            NodeView source = treeView.GetNodeByGuid(pendingScriptCreate.sourceGuid) as NodeView;
             var nodeType = Type.GetType($"{pendingScriptCreate.scriptName}, Assembly-CSharp");
             if (nodeType != null) {
                 NodeView createdNode;
                 if (source != null) {
                     if (pendingScriptCreate.isSourceParent) {
-                        createdNode = CurrentTreeView.CreateNode(nodeType, pendingScriptCreate.nodePosition, source);
+                        createdNode = treeView.CreateNode(nodeType, pendingScriptCreate.nodePosition, source);
                     } else {
-                        createdNode = CurrentTreeView.CreateNodeWithChild(nodeType, pendingScriptCreate.nodePosition, source);
+                        createdNode = treeView.CreateNodeWithChild(nodeType, pendingScriptCreate.nodePosition, source);
                     }
                 } else {
-                    createdNode = CurrentTreeView.CreateNode(nodeType, pendingScriptCreate.nodePosition, null);
+                    createdNode = treeView.CreateNode(nodeType, pendingScriptCreate.nodePosition, null);
                 }
 
-                CurrentTreeView.SelectNode(createdNode);
+                treeView.SelectNode(createdNode);
                 EditorUtility.OpenScriptInEditor(createdNode);
             }
 
             pendingScriptCreate.Reset();
         }
 
-        void OnUndoRedo() {
-            if (CurrentTree != null) {
-                CurrentSerializer.serializedObject.Update();
-                CurrentTreeView.PopulateView(CurrentSerializer);
-            }
+        void OnUndoRedo()
+        {
+            if (tree == null) return;
+            serializedTree.serializedObject.Update();
+            treeView.PopulateView(serializedTree);
         }
 
         private void OnEnable() {
@@ -276,22 +246,12 @@ namespace TheKiwiCoder {
             }
         }
 
-        void CloseRuntimeTabs() {
-            var tabs = tabView.Query<TreeViewTab>().ToList();
-            foreach (var tab in tabs) {
-                if (tab.isRuntimeTab) {
-                    tab.Close();
-                }
-            }
-        }
-
         void OnEnterPlayMode() {
             OnSelectionChange();
         }
 
         void OnExitPlayMode() {
             OnSelectionChange();
-            CloseRuntimeTabs();
         }
 
         private void OnSelectionChange() {
@@ -304,52 +264,85 @@ namespace TheKiwiCoder {
         }
 
         void SelectNewTree(BehaviourTree tree) {
-            NewTab(tree, true);
+            PopToSubtree(0, null);
+            SelectTree(tree);
         }
 
-        public void NewTab(BehaviourTree newTree, bool focus) {
+        public void SelectTree(BehaviourTree newTree) {
 
-            // Check for existing tab
-            var existingTab = tabView.Q<TreeViewTab>(newTree.name);
-            if (existingTab != null) {
-
-                // Focus existing tab
-                if (focus) {
-                    tabView.activeTab = existingTab;
-                }
+            // If tree view is null the window is probably unfocused
+            if (treeView == null) {
                 return;
             }
 
-            // Otherwise create a new tab
-            TreeViewTab newTab = new TreeViewTab(newTree, behaviourTreeStyle);
-            tabView.Add(newTab);
+            if (!newTree) {
+                ClearSelection();
+                return;
+            }
 
-            // Record active tab
-            windowState.TabOpened(newTab);
+            if (newTree != tree) {
+                ClearSelection();
+            }
 
-            // And Focus
-            if (focus) {
-                tabView.activeTab = newTab;
-                overlayView?.Hide();
+            tree = newTree;
+            serializedTree = new SerializedBehaviourTree(newTree);
+
+            var childCount = breadcrumbs.childCount;
+            breadcrumbs.PushItem($"{serializedTree.tree.name}", () => PopToSubtree(childCount, newTree));
+            settings.windowState.treeStack.Add(tree);
+            settings.windowState.Save();
+
+            overlayView?.Hide();
+            treeView?.PopulateView(serializedTree);
+            blackboardView?.Bind(serializedTree);
+        }
+        
+        public void PushSubTreeView(SubTree subtreeNode)
+        {
+            if (subtreeNode.treeAsset != null)
+            {
+                SelectTree(Application.isPlaying ? subtreeNode.treeInstance : subtreeNode.treeAsset);
+            }
+            else
+            {
+                Debug.LogError("Invalid subtree assigned. Assign a a behaviour tree to the tree asset field");
+            }   
+        }
+
+        private void PopToSubtree(int depth, BehaviourTree tree)
+        {
+            while (breadcrumbs != null && breadcrumbs.childCount > depth)
+            {
+                breadcrumbs.PopItem();
+                settings.windowState.treeStack.Pop();
+                settings.windowState.Save();
+            }
+
+            if (tree)
+            {
+                SelectTree(tree);
             }
         }
 
-        void ClearSelection() {
+        void ClearSelection()
+        {
+            tree = null;
+            serializedTree = null;
+            treeView?.ClearView();
             inspectorView?.Clear();
-            CurrentTreeView?.ClearView();
             blackboardView?.ClearView();
             overlayView?.Show();
         }
 
         void ClearIfSelected(string path) {
-            if (CurrentSerializer == null) {
+            if (serializedTree == null) {
                 return;
             }
 
-            if (AssetDatabase.GetAssetPath(CurrentSerializer.tree) == path) {
+            if (AssetDatabase.GetAssetPath(serializedTree.tree) == path) {
                 // Need to delay because this is called from a will delete asset callback
                 EditorApplication.delayCall += () => {
-                    NewTab(null, true);
+                    SelectTree(null);
                 };
             }
         }
@@ -357,7 +350,7 @@ namespace TheKiwiCoder {
         private void OnInspectorUpdate() {
             if (Application.isPlaying) {
                 editorUpdate.Begin();
-                CurrentTreeView?.UpdateNodeStates();
+                treeView?.UpdateNodeStates();
                 editorUpdate.End();
             }
         }
@@ -369,8 +362,9 @@ namespace TheKiwiCoder {
             }
         }
 
-        public void InspectNode(SerializedBehaviourTree serializer, NodeView node) {
-            inspectorView.UpdateSelection(serializer, node);
+        public void OnNodeSelectionChanged(NodeView nodeView)
+        {
+            inspectorView.UpdateSelection(serializedTree, nodeView);   
         }
     }
 }

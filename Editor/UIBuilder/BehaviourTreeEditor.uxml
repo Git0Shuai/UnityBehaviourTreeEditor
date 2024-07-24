@@ -27,7 +27,10 @@
             </TheKiwiCoder.SplitView>
         </ui:VisualElement>
         <ui:VisualElement name="right-panel">
-            <ui:TabView reorderable="true" style="flex-grow: 1;" />
+            <uie:Toolbar>
+                <uie:ToolbarBreadcrumbs name="breadcrumbs" />
+            </uie:Toolbar>
+            <TheKiwiCoder.BehaviourTreeView focusable="true" style="flex-grow: 1; border-top-width: 2px; border-top-color: rgb(0, 0, 0);" />
         </ui:VisualElement>
     </TheKiwiCoder.SplitView>
     <TheKiwiCoder.OverlayView name="OverlayView" style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; align-items: center; justify-content: center; background-color: rgba(0, 0, 0, 0.5); visibility: hidden; display: flex;">

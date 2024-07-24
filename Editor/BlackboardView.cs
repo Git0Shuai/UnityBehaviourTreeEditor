@@ -1,16 +1,14 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine.UIElements;
 using UnityEditor;
 using UnityEditor.UIElements;
-using UnityEngine;
 
 namespace TheKiwiCoder {
 
-    [UxmlElement]
     public partial class BlackboardView : VisualElement {
 
+        public new class UxmlFactory: UxmlFactory<BlackboardView, UxmlTraits> { }
+        
         private SerializedBehaviourTree behaviourTree;
 
         private ListView listView;

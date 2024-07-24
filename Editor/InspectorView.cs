@@ -1,16 +1,12 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 using UnityEngine.UIElements;
-using UnityEditor;
 using UnityEditor.UIElements;
 
 namespace TheKiwiCoder {
 
-    [UxmlElement]
     public partial class InspectorView : VisualElement {
 
+        public new class UxmlFactory: UxmlFactory<InspectorView, UxmlTraits> { }
+        
         public InspectorView() {
 
         }

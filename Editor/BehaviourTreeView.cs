@@ -7,8 +7,10 @@ using System.Linq;
 
 namespace TheKiwiCoder {
 
-    [UxmlElement]
     public partial class BehaviourTreeView : GraphView {
+        
+        public new class UxmlFactory: UxmlFactory<BehaviourTreeView, UxmlTraits> { }
+        
         public Action<NodeView> OnNodeSelected;
 
         protected override bool canCopySelection => true;
@@ -203,7 +205,7 @@ namespace TheKiwiCoder {
 
                         // The root node is not deletable
                         if (nodeView.node is not RootNode) {
-                            OnNodeSelected(null);
+                            OnNodeSelected?.Invoke(null);
                             serializer.DeleteNode(nodeView.node);
                         } else {
                             blockedDeletes.Add(elem);
@@ -357,7 +359,7 @@ namespace TheKiwiCoder {
 
         public void InspectNode(Node node) {
             var nodeView = FindNodeView(node);
-            OnNodeSelected(nodeView);
+            OnNodeSelected?.Invoke(nodeView);
         }
 
         internal void DeleteNodeView(Node n) {
@@ -373,17 +375,13 @@ namespace TheKiwiCoder {
             }
         }
 
-        public void CreateSubTree(NodeView nodeView) {
-
-            BehaviourTreeEditorWindow window = BehaviourTreeEditorWindow.Instance;
-
-
+        public void CreateSubTree(NodeView nodeView)
+        {
             InspectNode(null);
 
-            BehaviourTree tree = EditorUtility.CreateNewTree();
-            if (tree) {
-
-
+            var tree = EditorUtility.CreateNewTree();
+            if (tree)
+            {
                 var subTreeRootParent = nodeView.NodeParent.node;
                 var subTreeRoot = nodeView.node;
 
@@ -393,7 +391,6 @@ namespace TheKiwiCoder {
                     newTree.BeginBatch();
                     newTree.CloneTree(subTreeRoot, tree.rootNode);
                     newTree.EndBatch();
-                    window.NewTab(tree, false);
                 }
 
                 // Replace subtree with subtree node

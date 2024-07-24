@@ -1,15 +1,13 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 using UnityEditor;
-using UnityEditor.UIElements;
 
 namespace TheKiwiCoder {
 
-    [UxmlElement]
-    public partial class NewScriptDialogView : VisualElement {
+    public class NewScriptDialogView : VisualElement {
 
+        public new class UxmlFactory: UxmlFactory<NewScriptDialogView, UxmlTraits> { }
+        
         EditorUtility.ScriptTemplate scriptTemplate;
         TextField textField;
         Button confirmButton;
@@ -60,8 +58,8 @@ namespace TheKiwiCoder {
             string scriptName = textField.text;
 
             var newNodePath = $"{BehaviourTreeEditorWindow.Instance.settings.newNodePath}";
-            if (AssetDatabase.IsValidFolder(newNodePath)) {
-
+            //if (AssetDatabase.IsValidFolder(newNodePath)) {
+            {
                 var destinationFolder = System.IO.Path.Combine(newNodePath, scriptTemplate.subFolder);
                 var destinationPath = System.IO.Path.Combine(destinationFolder, $"{scriptName}.cs");
 
@@ -92,9 +90,10 @@ namespace TheKiwiCoder {
                     Debug.LogError($"Script with that name already exists:{scriptPath}");
                     Close();
                 }
-            } else {
-                Debug.LogError($"Invalid folder path:{newNodePath}. Check the project configuration settings 'newNodePath' is configured to a valid folder");
-            }
+            } 
+            //else {
+            //    Debug.LogError($"Invalid folder path:{newNodePath}. Check the project configuration settings 'newNodePath' is configured to a valid folder");
+            //}
         }
 
         void WaitForCompilation() {

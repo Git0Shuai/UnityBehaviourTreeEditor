@@ -116,8 +116,8 @@ namespace TheKiwiCoder {
                 }
             }
 
+            if (BehaviourTreeEditorWindow.Instance.settings.IsDeveloper)
             {
-
                 tree.Add(new SearchTreeGroupEntry(new GUIContent("New Script...")) { level = 1 });
 
                 System.Action createActionScript = () => CreateScript(scriptFileAssets[0], context);
@@ -133,7 +133,6 @@ namespace TheKiwiCoder {
                 tree.Add(new SearchTreeEntry(new GUIContent($"New Decorator Script")) { level = 2, userData = createDecoratorScript });
             }
 
-
             return tree;
         }
 
@@ -147,7 +146,7 @@ namespace TheKiwiCoder {
             BehaviourTreeEditorWindow editorWindow = BehaviourTreeEditorWindow.Instance;
 
             var windowMousePosition = editorWindow.rootVisualElement.ChangeCoordinatesTo(editorWindow.rootVisualElement.parent, context.screenMousePosition - editorWindow.position.position);
-            var graphMousePosition = editorWindow.CurrentTreeView.contentViewContainer.WorldToLocal(windowMousePosition);
+            var graphMousePosition = editorWindow.treeView.contentViewContainer.WorldToLocal(windowMousePosition);
             var nodeOffset = new Vector2(-75, -20);
             var nodePosition = graphMousePosition + nodeOffset;
 
@@ -170,7 +169,7 @@ namespace TheKiwiCoder {
             BehaviourTreeEditorWindow editorWindow = BehaviourTreeEditorWindow.Instance;
 
             var windowMousePosition = editorWindow.rootVisualElement.ChangeCoordinatesTo(editorWindow.rootVisualElement.parent, context.screenMousePosition - editorWindow.position.position);
-            var graphMousePosition = editorWindow.CurrentTreeView.contentViewContainer.WorldToLocal(windowMousePosition);
+            var graphMousePosition = editorWindow.treeView.contentViewContainer.WorldToLocal(windowMousePosition);
             var nodeOffset = new Vector2(-75, -20);
             var nodePosition = graphMousePosition + nodeOffset;
 
@@ -180,7 +179,7 @@ namespace TheKiwiCoder {
         public static void Show(Vector2 mousePosition, NodeView source, bool isSourceParent = false) {
             Vector2 screenPoint = GUIUtility.GUIToScreenPoint(mousePosition);
             CreateNodeWindow searchWindowProvider = ScriptableObject.CreateInstance<CreateNodeWindow>();
-            searchWindowProvider.Initialise(BehaviourTreeEditorWindow.Instance.CurrentTreeView, source, isSourceParent);
+            searchWindowProvider.Initialise(BehaviourTreeEditorWindow.Instance.treeView, source, isSourceParent);
             SearchWindowContext windowContext = new SearchWindowContext(screenPoint, 240, 320);
             SearchWindow.Open(windowContext, searchWindowProvider);
         }

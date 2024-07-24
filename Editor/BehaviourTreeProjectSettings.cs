@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Sirenix.OdinInspector;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -17,6 +18,20 @@ namespace TheKiwiCoder {
         [Tooltip("Folder where new node scripts will be created. (Must begin with 'Assets')")]
         public string newNodePath = "Assets/";
 
+        [Header("Node Canvas Settings")]
+        [Tooltip("Horizontal grid size nodes will snap to")]
+        public int gridSnapSizeX = 1;
+
+        [Tooltip("Vertical grid size nodes will snap to")]
+        public int gridSnapSizeY = 1;
+
+        [Tooltip("If enabled, selecting a node will automatically add all it's children to the selection. If disabled, hold control to select entire node hierarchy")]
+        public bool autoSelectNodeHierarchy = false;
+
+        [Header("Developer Settings")] 
+        [Tooltip("Developer cand create custom script nodes")]
+        public bool IsDeveloper = false;
+        
         [Tooltip("Custom script template to use when creating action nodes")]
         public TextAsset scriptTemplateActionNode;
 
@@ -29,15 +44,6 @@ namespace TheKiwiCoder {
         [Tooltip("Custom script template to use when creating decorator nodes")]
         public TextAsset scriptTemplateDecoratorNode;
 
-        [Header("Node Canvas Settings")]
-        [Tooltip("Horizontal grid size nodes will snap to")]
-        public int gridSnapSizeX = 15;
-
-        [Tooltip("Vertical grid size nodes will snap to")]
-        public int gridSnapSizeY = 225;
-
-        [Tooltip("If enabled, selecting a node will automatically add all it's children to the selection. If disabled, hold control to select entire node hierarchy")]
-        public bool autoSelectNodeHierarchy = false;
 
         [HideInInspector]
         public BehaviourTreeEditorWindowState windowState = new BehaviourTreeEditorWindowState();

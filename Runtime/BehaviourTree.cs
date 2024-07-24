@@ -1,12 +1,8 @@
-using JetBrains.Annotations;
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
 
 namespace TheKiwiCoder {
-    [CreateAssetMenu()]
+    [CreateAssetMenu(fileName = "AI_XXX" ,menuName = "Home2D/BehaviorTree")]
     public class BehaviourTree : ScriptableObject {
 
         [SerializeReference]

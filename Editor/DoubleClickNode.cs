@@ -1,3 +1,4 @@
+using Sirenix.OdinInspector;
 using UnityEditor;
 using UnityEngine.UIElements;
 
@@ -48,22 +49,19 @@ namespace TheKiwiCoder {
                 AssetDatabase.OpenAsset(script);
 
                 // Remove the node from selection to prevent dragging it around when returning to the editor.
-                BehaviourTreeEditorWindow.Instance.CurrentTreeView.RemoveFromSelection(clickedElement);
+                BehaviourTreeEditorWindow.Instance.treeView.RemoveFromSelection(clickedElement);
             }
         }
 
-        void OpenSubtree(NodeView clickedElement) {
-            var subtreeNode = clickedElement.node as SubTree;
-            var treeToFocus = subtreeNode.treeAsset;
-            if (treeToFocus != null) {
-                BehaviourTreeEditorWindow.Instance.NewTab(treeToFocus, true);
-            }
+        void OpenSubtree(NodeView clickedElement)
+        {
+            BehaviourTreeEditorWindow.Instance.PushSubTreeView(clickedElement.node as SubTree);
         }
 
         void OnDoubleClick(MouseDownEvent evt, NodeView clickedElement) {
             if (clickedElement.node is SubTree) {
                 OpenSubtree(clickedElement);
-            } else {
+            } else if (BehaviourTreeEditorWindow.Instance.settings.IsDeveloper) {
                 OpenScriptForNode(clickedElement);
             }
         }
